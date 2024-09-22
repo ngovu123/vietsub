@@ -1,22 +1,15 @@
 import os
 import random
 import re
-
 import google.generativeai as genai
 from dotenv import load_dotenv
 from pptx import Presentation
-
 from Cache.default_prompt import prompt
 from content_extractor import extract_contents_from_text
 from layout_report_tool import supporting_parameters
 
-# Load environment variables from .env file
 load_dotenv()
-
-# Get the API key from the environment
 api_key = os.getenv("API_KEY")
-
-# Configure the genai library with the API key
 genai.configure(api_key=api_key)
 
 
@@ -32,9 +25,8 @@ def get_bot_response(topic: str, theme: str) -> tuple:
     tuple: A tuple containing the path to the generated PowerPoint file and the filename.
     """
     user_text = topic
-    text = ""
     input_string = re.sub(r'[^\w\s.\-\(\)]', '', user_text).replace("\n", "")
-    number = int(theme[-1])
+    number = int(theme[-1]) if theme[-1].isdigit() else 1
     pptlink = None
 
     if number not in range(1, 10):
@@ -43,7 +35,6 @@ def get_bot_response(topic: str, theme: str) -> tuple:
 
     print(f"Available design, using {theme} design...")
 
-    # Generate a filename using OpenAI API
     filename_prompt = f"""Generate a short, descriptive filename based on the following input: \"{user_text}\".
 Answer just with the short filename; no other explanation. 
 Do not give extensions to files like my_file.txt. I just need a file name."""
@@ -68,12 +59,10 @@ Do not give extensions to files like my_file.txt. I just need a file name."""
     filename = filename_response.text.strip().replace(" ", "_")
 
     cache_dir = 'Powerpointer-main/Cache'
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
+    os.makedirs(cache_dir, exist_ok=True)
 
     if number <= 7:
         question = prompt(user_text)
-
         text = model.generate_content(
             contents=question,
             generation_config=generation_config,
@@ -195,7 +184,6 @@ def create_ppt_default(text_file: str, design_number: int, ppt_name: str) -> str
                     next_line = f.readline().strip()
                 continue
 
-    # Add the last slide if there is content remaining
     if content:
         slide_layout_index = random.choice(layout_indices) if not first_time else 1
         slide = prs.slides.add_slide(prs.slide_layouts[slide_layout_index])

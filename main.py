@@ -16,15 +16,15 @@ def generate_ppt(topic: str, theme: str) -> tuple:
     tuple: A tuple containing the PPT file path and the PPT file name.
     """
     design = {
-        "Theme A": "1",
-        "Theme B": "2",
-        "Theme C": "3",
-        "Theme D": "4",
-        "Theme E": "5",
-        "Theme F": "6",
-        "Theme G": "7",
-        "Custom Theme 1": "8",
-        "Custom Theme 2": "9",
+        "Theme A": "Design-1",
+        "Theme B": "Design-2",
+        "Theme C": "Design-3",
+        "Theme D": "Design-4",
+        "Theme E": "Design-5",
+        "Theme F": "Design-6",
+        "Theme G": "Design-7",
+        "Custom Theme 1": "Design-8",
+        "Custom Theme 2": "Design-9",
     }
 
     if theme not in design:

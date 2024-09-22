@@ -1,7 +1,6 @@
 from pptx import Presentation
 import pandas as pd
 
-
 def list_placeholders(design_number: int) -> pd.DataFrame:
     """
     Lists the placeholders in a PowerPoint design and returns a DataFrame.
@@ -41,7 +40,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     return df
 
 
-def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
+def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame.style:
     """
     Applies color to rows of DataFrame based on the layout index.
 
@@ -49,9 +48,8 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     df (pd.DataFrame): DataFrame containing placeholder details.
 
     Returns:
-    pd.io.formats.style.Styler: Styler object with applied row colors.
+    pd.DataFrame.style: Styled DataFrame with applied row colors.
     """
-
     def apply_colors(row):
         colors = [
             'background-color: #ffcccc',  # Light red
@@ -61,7 +59,7 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
             'background-color: #ffccff',  # Light pink
             'background-color: #ccffff',  # Light cyan
             'background-color: #ffd700',  # Gold
-            'background-color: #e6e6fa'  # Lavender
+            'background-color: #e6e6fa'   # Lavender
         ]
         return [colors[row['Layout Index'] % len(colors)]] * len(row)
 
@@ -108,7 +106,7 @@ def supporting_parameters(design_number: int) -> tuple:
     """
     placeholders_df = list_placeholders(design_number)
 
-    # Display the styled DataFrame (optional but very usefull if you want to check yur custom design details)
+    # Display the styled DataFrame (optional but useful if you want to check custom design details)
     styled_df = color_rows_by_layout(placeholders_df)
 
     # Get placeholder indices by layout

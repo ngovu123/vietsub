@@ -5,16 +5,6 @@ import os
 from custome_function_main import get_bot_response
 
 def generate_ppt(topic: str, theme: str) -> tuple:
-    """
-    Function to generate the PowerPoint presentation based on the selected topic and theme.
-
-    Parameters:
-    topic (str): The topic for the PowerPoint presentation.
-    theme (str): The selected theme for the PowerPoint presentation.
-
-    Returns:
-    tuple: A tuple containing the PPT file path and the PPT file name.
-    """
     design = {
         "Theme A": "Design-1",
         "Theme B": "Design-2",
@@ -34,9 +24,6 @@ def generate_ppt(topic: str, theme: str) -> tuple:
     return ppt_path, ppt_name
 
 def main() -> None:
-    """
-    Main function to create the Streamlit UI for AI-Enhanced Presentation Maker.
-    """
     st.title("AI-Enhanced Presentation Maker by Gemini")
 
     topic = st.text_input("Enter your topic:")

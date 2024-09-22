@@ -16,7 +16,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     placeholders_data = []
 
     design_file_path = f"Powerpointer-main/Designs/Design-{design_number}.pptx"
-    
+
     # Check if the design file exists
     if not os.path.exists(design_file_path):
         raise FileNotFoundError(f"Design file '{design_file_path}' not found. Please check the file path.")

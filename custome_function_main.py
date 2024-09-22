@@ -8,8 +8,13 @@ from Cache.default_prompt import prompt
 from content_extractor import extract_contents_from_text
 from layout_report_tool import supporting_parameters
 
+# Load environment variables from .env file
 load_dotenv()
+
+# Get the API key from the environment
 api_key = os.getenv("API_KEY")
+
+# Configure the genai library with the API key
 genai.configure(api_key=api_key)
 
 
@@ -25,8 +30,9 @@ def get_bot_response(topic: str, theme: str) -> tuple:
     tuple: A tuple containing the path to the generated PowerPoint file and the filename.
     """
     user_text = topic
+    text = ""
     input_string = re.sub(r'[^\w\s.\-\(\)]', '', user_text).replace("\n", "")
-    number = int(theme[-1]) if theme[-1].isdigit() else 1
+    number = int(theme[-1])
     pptlink = None
 
     if number not in range(1, 10):
@@ -36,8 +42,8 @@ def get_bot_response(topic: str, theme: str) -> tuple:
     print(f"Available design, using {theme} design...")
 
     filename_prompt = f"""Generate a short, descriptive filename based on the following input: \"{user_text}\".
-Answer just with the short filename; no other explanation. 
-Do not give extensions to files like my_file.txt. I just need a file name."""
+    Answer just with the short filename; no other explanation. 
+    Do not give extensions to files like my_file.txt. I just need a file name."""
 
     model = genai.GenerativeModel('gemini-pro')
 
@@ -59,10 +65,12 @@ Do not give extensions to files like my_file.txt. I just need a file name."""
     filename = filename_response.text.strip().replace(" ", "_")
 
     cache_dir = 'Powerpointer-main/Cache'
-    os.makedirs(cache_dir, exist_ok=True)
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
 
     if number <= 7:
         question = prompt(user_text)
+
         text = model.generate_content(
             contents=question,
             generation_config=generation_config,
@@ -78,24 +86,12 @@ Do not give extensions to files like my_file.txt. I just need a file name."""
     else:
         _, _, index_containing_placeholders = supporting_parameters(number)
         pptlink = create_ppt_custom(f'Powerpointer-main/Cache/custom_prompt.txt', number, filename,
-                                    index_containing_placeholders)
+                                     index_containing_placeholders)
 
     return pptlink, f'{cache_dir}/{filename}'
 
 
 def create_ppt_custom(text_file: str, design_number: int, ppt_name: str, index_containing_placeholders: list) -> str:
-    """
-    Creates a custom PowerPoint presentation based on the provided text file and design number.
-
-    Parameters:
-    text_file (str): Path to the text file containing slide contents.
-    design_number (int): The design number of the PowerPoint template.
-    ppt_name (str): The name for the generated PowerPoint file.
-    index_containing_placeholders (list): List of indices containing placeholders.
-
-    Returns:
-    str: Path to the generated PowerPoint file.
-    """
     prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
     slide_count = 0
     header = ""
@@ -133,17 +129,6 @@ def create_ppt_custom(text_file: str, design_number: int, ppt_name: str, index_c
 
 
 def create_ppt_default(text_file: str, design_number: int, ppt_name: str) -> str:
-    """
-    Creates a default PowerPoint presentation based on the provided text file and design number.
-
-    Parameters:
-    text_file (str): Path to the text file containing slide contents.
-    design_number (int): The design number of the PowerPoint template.
-    ppt_name (str): The name for the generated PowerPoint file.
-
-    Returns:
-    str: Path to the generated PowerPoint file.
-    """
     prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
     slide_count = 0
     header = ""
@@ -169,29 +154,9 @@ def create_ppt_default(text_file: str, design_number: int, ppt_name: str) -> str
                 title.text = header
                 body_shape = slide.shapes.placeholders[placeholder_indices[slide_layout_index]]
                 tf = body_shape.text_frame
-                tf.text = content
-                content = ""
+                tf.text = line.replace('#Slide:', '').strip()
                 slide_count += 1
                 continue
-            elif line.startswith('#Header:'):
-                header = line.replace('#Header:', '').strip()
-                continue
-            elif line.startswith('#Content:'):
-                content = line.replace('#Content:', '').strip()
-                next_line = f.readline().strip()
-                while next_line and not next_line.startswith('#'):
-                    content += '\n' + next_line
-                    next_line = f.readline().strip()
-                continue
-
-    if content:
-        slide_layout_index = random.choice(layout_indices) if not first_time else 1
-        slide = prs.slides.add_slide(prs.slide_layouts[slide_layout_index])
-        title = slide.shapes.title
-        title.text = header
-        body_shape = slide.shapes.placeholders[placeholder_indices[slide_layout_index]]
-        tf = body_shape.text_frame
-        tf.text = content
 
     ppt_path = f'Powerpointer-main/GeneratedPresentations/{ppt_name}.pptx'
     prs.save(ppt_path)

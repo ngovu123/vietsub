@@ -12,7 +12,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     pd.DataFrame: DataFrame containing placeholder details.
     """
     placeholders_data = []
-    file_path = f"Powerpointer-main/Designs/Design-{design_number}.pptx"
+    file_path = f"vietsub/Designs/Design-{design_number}.pptx"
     
     try:
         prs = Presentation(file_path)

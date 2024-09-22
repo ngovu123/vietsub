@@ -1,5 +1,6 @@
 from pptx import Presentation
 import pandas as pd
+import os
 
 
 def list_placeholders(design_number: int) -> pd.DataFrame:
@@ -14,8 +15,14 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     """
     placeholders_data = []
 
+    design_file_path = f"Powerpointer-main/Designs/Design-{design_number}.pptx"
+    
+    # Check if the design file exists
+    if not os.path.exists(design_file_path):
+        raise FileNotFoundError(f"Design file '{design_file_path}' not found. Please check the file path.")
+
     # Load the presentation
-    prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
+    prs = Presentation(design_file_path)
 
     # Iterate over slide layouts and placeholders
     for i, layout in enumerate(prs.slide_layouts):
@@ -51,7 +58,6 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
     pd.DataFrame: DataFrame with applied row colors.
     """
-
     def apply_colors(row):
         colors = [
             'background-color: #ffcccc',  # Light red
@@ -61,7 +67,7 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame:
             'background-color: #ffccff',  # Light pink
             'background-color: #ccffff',  # Light cyan
             'background-color: #ffd700',  # Gold
-            'background-color: #e6e6fa'  # Lavender
+            'background-color: #e6e6fa'   # Lavender
         ]
         return [colors[row['Layout Index'] % len(colors)]] * len(row)
 

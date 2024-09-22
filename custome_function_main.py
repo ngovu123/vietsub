@@ -63,7 +63,7 @@ def get_bot_response(topic: str, theme: str) -> tuple:
 
     filename = filename_response.text.strip().replace(" ", "_")
 
-    cache_dir = 'vietsub/Cache'
+    cache_dir = 'Cache'
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
@@ -84,7 +84,7 @@ def get_bot_response(topic: str, theme: str) -> tuple:
 
     else:
         _, _, index_containing_placeholders = supporting_parameters(number)
-        pptlink = create_ppt_custom(f'vietsub/Cache/custom_prompt.txt', number, filename,
+        pptlink = create_ppt_custom(f'Cache/custom_prompt.txt', number, filename,
                                     index_containing_placeholders)
 
     return pptlink, f'{cache_dir}/{filename}'
@@ -102,7 +102,7 @@ def create_ppt_custom(text_file: str, design_number: int, ppt_name: str, index_c
     Returns:
     str: Path to the generated PowerPoint file.
     """
-    prs = Presentation(f"vietsub/Designs/Design-{design_number}.pptx")
+    prs = Presentation(f"Designs/Design-{design_number}.pptx")
     slide_count = 0
     header = ""
     content = ""
@@ -133,7 +133,7 @@ def create_ppt_custom(text_file: str, design_number: int, ppt_name: str, index_c
                 header = line.replace('#Header:', '').strip()
                 continue
 
-    ppt_path = f'vietsub/GeneratedPresentations/{ppt_name}.pptx'
+    ppt_path = f'GeneratedPresentations/{ppt_name}.pptx'
     prs.save(ppt_path)
     return ppt_path
 
@@ -149,7 +149,7 @@ def create_ppt_default(text_file: str, design_number: int, ppt_name: str) -> str
     Returns:
     str: Path to the generated PowerPoint file.
     """
-    prs = Presentation(f"vietsub/Designs/Design-{design_number}.pptx")
+    prs = Presentation(f"Designs/Design-{design_number}.pptx")
 
     with open(text_file, 'r', encoding='utf-8') as f:
         for line in f:
@@ -162,6 +162,6 @@ def create_ppt_default(text_file: str, design_number: int, ppt_name: str) -> str
                 slide = prs.slides.add_slide(prs.slide_layouts[1])
                 slide.shapes.placeholders[1].text = content_text
 
-    ppt_path = f'vietsub/GeneratedPresentations/{ppt_name}.pptx'
+    ppt_path = f'GeneratedPresentations/{ppt_name}.pptx'
     prs.save(ppt_path)
     return ppt_path

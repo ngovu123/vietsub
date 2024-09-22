@@ -15,10 +15,11 @@ load_dotenv()
 
 # Get the API key from the environment
 api_key = os.getenv("API_KEY")
+if api_key is None:
+    raise ValueError("API_KEY not found. Please set it in your environment variables.")
 
 # Configure the genai library with the API key
 genai.configure(api_key=api_key)
-
 
 def get_bot_response(topic: str, theme: str) -> tuple:
     """
@@ -45,8 +46,8 @@ def get_bot_response(topic: str, theme: str) -> tuple:
 
     # Generate a filename using OpenAI API
     filename_prompt = f"""Generate a short, descriptive filename based on the following input: \"{user_text}\".
-Answer just with the short filename; no other explanation. 
-Do not give extensions to files like my_file.txt. I just need a file name."""
+    Answer just with the short filename; no other explanation. 
+    Do not give extensions to files like my_file.txt. I just need a file name."""
 
     model = genai.GenerativeModel('gemini-pro')
 
@@ -65,6 +66,9 @@ Do not give extensions to files like my_file.txt. I just need a file name."""
         stream=False,
     )
 
+    if not filename_response or not filename_response.text:
+        raise ValueError("Failed to generate filename from the model.")
+
     filename = filename_response.text.strip().replace(" ", "_")
 
     cache_dir = 'Powerpointer-main/Cache'
@@ -73,23 +77,24 @@ Do not give extensions to files like my_file.txt. I just need a file name."""
 
     if number <= 7:
         question = prompt(user_text)
-
-        text = model.generate_content(
+        text_response = model.generate_content(
             contents=question,
             generation_config=generation_config,
             stream=False,
         )
+        if not text_response or not text_response.text:
+            raise ValueError("Failed to generate content from the model.")
 
         with open(f'{cache_dir}/{filename}.txt', 'w', encoding='utf-8') as f:
-            f.write(text.text)
+            f.write(text_response.text)
 
         placeholder_indices_by_layout_, layout_indices_, _ = supporting_parameters(number)
         pptlink = create_ppt_default(f'{cache_dir}/{filename}.txt', number, filename)
 
     else:
         _, _, index_containing_placeholders = supporting_parameters(number)
-        pptlink = create_ppt_custom(f'Powerpointer-main/Cache/custom_prompt.txt', number, filename,
-                                    index_containing_placeholders)
+        pptlink = create_ppt_custom('Powerpointer-main/Cache/custom_prompt.txt', number, filename,
+                                     index_containing_placeholders)
 
     return pptlink, f'{cache_dir}/{filename}'
 
@@ -110,33 +115,37 @@ def create_ppt_custom(text_file: str, design_number: int, ppt_name: str, index_c
     prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
     slide_count = 0
     header = ""
-    content = ""
 
-    with open(text_file, 'r', encoding='utf-8') as f:
-        for line_num, line in enumerate(f):
-            if line.startswith('#Title:'):
-                header = line.replace('#Title:', '').strip()
-                slide = prs.slides.add_slide(prs.slide_layouts[0])
-                title = slide.shapes.title
-                title.text = header
-                continue
-            elif line.startswith('#Slide:'):
-                contents = extract_contents_from_text(f.read())
-                placeholder_content = [slide for slide in contents]
-                slide = prs.slides.add_slide(prs.slide_layouts[slide_count + 1])
-                title = slide.shapes.title
-                title.text = header
-                count = 0
-                for i in index_containing_placeholders[slide_count + 1]:
-                    body_shape = slide.shapes.placeholders[i]
-                    tf = body_shape.text_frame
-                    tf.text = placeholder_content[slide_count][count]
-                    count += 1
-                slide_count += 1
-                continue
-            elif line.startswith('#Header:'):
-                header = line.replace('#Header:', '').strip()
-                continue
+    try:
+        with open(text_file, 'r', encoding='utf-8') as f:
+            for line_num, line in enumerate(f):
+                if line.startswith('#Title:'):
+                    header = line.replace('#Title:', '').strip()
+                    slide = prs.slides.add_slide(prs.slide_layouts[0])
+                    title = slide.shapes.title
+                    title.text = header
+                    continue
+                elif line.startswith('#Slide:'):
+                    contents = extract_contents_from_text(f.read())
+                    placeholder_content = [slide for slide in contents]
+                    slide = prs.slides.add_slide(prs.slide_layouts[slide_count + 1])
+                    title = slide.shapes.title
+                    title.text = header
+                    count = 0
+                    for i in index_containing_placeholders[slide_count + 1]:
+                        body_shape = slide.shapes.placeholders[i]
+                        tf = body_shape.text_frame
+                        tf.text = placeholder_content[slide_count][count]
+                        count += 1
+                    slide_count += 1
+                    continue
+                elif line.startswith('#Header:'):
+                    header = line.replace('#Header:', '').strip()
+                    continue
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Text file '{text_file}' not found.")
+    except Exception as e:
+        raise Exception(f"Error reading file '{text_file}': {e}")
 
     ppt_path = f'Powerpointer-main/GeneratedPresentations/{ppt_name}.pptx'
     prs.save(ppt_path)
@@ -164,47 +173,52 @@ def create_ppt_default(text_file: str, design_number: int, ppt_name: str) -> str
     layout_indices = [1, 7, 8]  # Valid slide layouts
     placeholder_indices = {1: 1, 7: 1, 8: 2}  # Corresponding placeholder indices
 
-    with open(text_file, 'r', encoding='utf-8') as f:
-        for line in f:
-            if line.startswith('#Title:'):
-                header = line.replace('#Title:', '').strip()
-                slide = prs.slides.add_slide(prs.slide_layouts[0])
-                title = slide.shapes.title
-                title.text = header
-                continue
-            elif line.startswith('#Slide:'):
-                slide_layout_index = random.choice(layout_indices) if not first_time else 1
-                first_time = False
-                slide = prs.slides.add_slide(prs.slide_layouts[slide_layout_index])
-                title = slide.shapes.title
-                title.text = header
-                body_shape = slide.shapes.placeholders[placeholder_indices[slide_layout_index]]
-                tf = body_shape.text_frame
-                tf.text = content
-                content = ""
-                slide_count += 1
-                continue
-            elif line.startswith('#Header:'):
-                header = line.replace('#Header:', '').strip()
-                continue
-            elif line.startswith('#Content:'):
-                content = line.replace('#Content:', '').strip()
-                next_line = f.readline().strip()
-                while next_line and not next_line.startswith('#'):
-                    content += '\n' + next_line
+    try:
+        with open(text_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.startswith('#Title:'):
+                    header = line.replace('#Title:', '').strip()
+                    slide = prs.slides.add_slide(prs.slide_layouts[0])
+                    title = slide.shapes.title
+                    title.text = header
+                    continue
+                elif line.startswith('#Slide:'):
+                    slide_layout_index = random.choice(layout_indices) if not first_time else 1
+                    first_time = False
+                    slide = prs.slides.add_slide(prs.slide_layouts[slide_layout_index])
+                    title = slide.shapes.title
+                    title.text = header
+                    body_shape = slide.shapes.placeholders[placeholder_indices[slide_layout_index]]
+                    tf = body_shape.text_frame
+                    tf.text = content
+                    content = ""
+                    slide_count += 1
+                    continue
+                elif line.startswith('#Header:'):
+                    header = line.replace('#Header:', '').strip()
+                    continue
+                elif line.startswith('#Content:'):
+                    content = line.replace('#Content:', '').strip()
                     next_line = f.readline().strip()
-                continue
+                    while next_line and not next_line.startswith('#'):
+                        content += '\n' + next_line
+                        next_line = f.readline().strip()
+                    continue
 
-    # Add the last slide if there is content remaining
-    if content:
-        slide_layout_index = random.choice(layout_indices) if not first_time else 1
-        slide = prs.slides.add_slide(prs.slide_layouts[slide_layout_index])
-        title = slide.shapes.title
-        title.text = header
-        body_shape = slide.shapes.placeholders[placeholder_indices[slide_layout_index]]
-        tf = body_shape.text_frame
-        tf.text = content
+        # Add the last slide if there is content remaining
+        if content:
+            slide_layout_index = random.choice(layout_indices) if not first_time else 1
+            slide = prs.slides.add_slide(prs.slide_layouts[slide_layout_index])
+            title = slide.shapes.title
+            title.text = header
+            body_shape = slide.shapes.placeholders[placeholder_indices[slide_layout_index]]
+            tf = body_shape.text_frame
+            tf.text = content
 
-    ppt_path = f'Powerpointer-main/GeneratedPresentations/{ppt_name}.pptx'
-    prs.save(ppt_path)
-    return ppt_path
+        ppt_path = f'Powerpointer-main/GeneratedPresentations/{ppt_name}.pptx'
+        prs.save(ppt_path)
+        return ppt_path
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Text file '{text_file}' not found.")
+    except Exception as e:
+        raise Exception(f"Error reading file '{text_file}': {e}")

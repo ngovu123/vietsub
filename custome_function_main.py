@@ -34,7 +34,8 @@ def get_bot_response(topic: str, theme: str) -> tuple:
 
     filename_prompt = f"Generate a short, descriptive filename based on the following input: \"{user_text}\"."
     
-    response = genai.ChatMessage(role="user", content=filename_prompt)
+    # Sử dụng API một cách chính xác
+    response = genai.generate_text(filename_prompt)  # Hoặc phương thức phù hợp
     filename = response.text.replace(" ", "_")
     pptx_file_name = f"{filename}.pptx"
     pptx_file_path = f"myapp/static/presentations/{pptx_file_name}"
@@ -48,7 +49,7 @@ def get_bot_response(topic: str, theme: str) -> tuple:
         
         for index in content_placeholder_indices:
             content_prompt = prompt(input_string, index)
-            response = genai.ChatMessage(role="user", content=content_prompt)
+            response = genai.generate_text(content_prompt)  # Hoặc phương thức phù hợp
             slide_content = response.text or "No content generated."
             slide.shapes[index].text = slide_content
 

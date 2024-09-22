@@ -41,7 +41,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     return df
 
 
-def color_rows_by_layout(df: pd.DataFrame) -> pd.core.frame.Style:
+def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     """
     Applies color to rows of DataFrame based on the layout index.
 
@@ -49,7 +49,7 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.core.frame.Style:
     df (pd.DataFrame): DataFrame containing placeholder details.
 
     Returns:
-    pd.core.frame.Style: Styler object with applied row colors.
+    pd.io.formats.style.Styler: Styler object with applied row colors.
     """
     colors = [
         'background-color: #ffcccc',  # Light red
@@ -78,9 +78,11 @@ def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
         - List of unique layout indices.
         - List of lists of content placeholder indices by layout.
     """
+    # Group by layout index and get placeholder indices
     placeholder_indices_by_layout = df.groupby('Layout Index')['Placeholder Index'].apply(list).tolist()
     layout_indices = df['Layout Index'].unique().tolist()
 
+    # Filter and group DataFrame by content placeholders
     filtered_df = df[df['Name'].str.startswith('Content Placeholder')]
     grouped = filtered_df.groupby('Layout Index')['Placeholder Index'].apply(list)
     index_containing_placeholders = grouped.tolist()
@@ -101,9 +103,4 @@ def supporting_parameters(design_number: int) -> tuple:
         - List of unique layout indices.
         - List of lists of content placeholder indices by layout.
     """
-    placeholders_df = list_placeholders(design_number)
-    styled_df = color_rows_by_layout(placeholders_df)
-    placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders = get_placeholder_indices_by_layout(
-        placeholders_df)
-
-    return placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders
+    placeholders_df = list_placeholders(des

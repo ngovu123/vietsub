@@ -1,6 +1,6 @@
 from pptx import Presentation
 import pandas as pd
-import os
+
 
 def list_placeholders(design_number: int) -> pd.DataFrame:
     """
@@ -13,13 +13,11 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     pd.DataFrame: DataFrame containing placeholder details.
     """
     placeholders_data = []
-    design_file_path = f"Powerpointer-main/Designs/Design-{design_number}.pptx"
 
-    if not os.path.exists(design_file_path):
-        raise FileNotFoundError(f"Design file '{design_file_path}' not found.")
+    # Load the presentation
+    prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
 
-    prs = Presentation(design_file_path)
-
+    # Iterate over slide layouts and placeholders
     for i, layout in enumerate(prs.slide_layouts):
         for shape in layout.placeholders:
             placeholder_format = shape.placeholder_format
@@ -35,13 +33,15 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
                 shape.top
             ])
 
+    # Create DataFrame
     df = pd.DataFrame(placeholders_data, columns=[
         'Layout Index', 'Placeholder Index', 'Shape ID', 'Name', 'Type', 'Width', 'Height', 'Left', 'Top'
     ])
 
     return df
 
-def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame:
+
+def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     """
     Applies color to rows of DataFrame based on the layout index.
 
@@ -49,8 +49,9 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame:
     df (pd.DataFrame): DataFrame containing placeholder details.
 
     Returns:
-    pd.DataFrame: DataFrame with applied row colors.
+    pd.io.formats.style.Styler: Styler object with applied row colors.
     """
+
     def apply_colors(row):
         colors = [
             'background-color: #ffcccc',  # Light red
@@ -64,14 +65,12 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame:
         ]
         return [colors[row['Layout Index'] % len(colors)]] * len(row)
 
-    styled_df = df.copy()
-    styled_df['Color'] = [apply_colors(row) for _, row in styled_df.iterrows()]
+    return df.style.apply(apply_colors, axis=1)
 
-    return styled_df
 
 def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
     """
-    Retrieves placeholder indices grouped by layout index.
+    Retrieves placeholder indices grouped by layout index and indices containing content placeholders.
 
     Parameters:
     df (pd.DataFrame): DataFrame containing placeholder details.
@@ -80,16 +79,19 @@ def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
     tuple: A tuple containing:
         - List of lists of placeholder indices by layout.
         - List of unique layout indices.
-        - List of content placeholder indices by layout.
+        - List of lists of content placeholder indices by layout.
     """
+    # Group by layout index and get placeholder indices
     placeholder_indices_by_layout = df.groupby('Layout Index')['Placeholder Index'].apply(list).tolist()
     layout_indices = df['Layout Index'].unique().tolist()
 
+    # Filter and group DataFrame by content placeholders
     filtered_df = df[df['Name'].str.startswith('Content Placeholder')]
     grouped = filtered_df.groupby('Layout Index')['Placeholder Index'].apply(list)
     index_containing_placeholders = grouped.tolist()
 
     return placeholder_indices_by_layout, layout_indices, index_containing_placeholders
+
 
 def supporting_parameters(design_number: int) -> tuple:
     """
@@ -105,7 +107,12 @@ def supporting_parameters(design_number: int) -> tuple:
         - List of lists of content placeholder indices by layout.
     """
     placeholders_df = list_placeholders(design_number)
+
+    # Display the styled DataFrame (optional but very usefull if you want to check yur custom design details)
     styled_df = color_rows_by_layout(placeholders_df)
-    placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders = get_placeholder_indices_by_layout(placeholders_df)
+
+    # Get placeholder indices by layout
+    placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders = get_placeholder_indices_by_layout(
+        placeholders_df)
 
     return placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders

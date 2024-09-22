@@ -13,8 +13,11 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     pd.DataFrame: DataFrame containing placeholder details.
     """
     placeholders_data = []
+
+    # Load the presentation
     prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
 
+    # Iterate over slide layouts and placeholders
     for i, layout in enumerate(prs.slide_layouts):
         for shape in layout.placeholders:
             placeholder_format = shape.placeholder_format
@@ -30,6 +33,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
                 shape.top
             ])
 
+    # Create DataFrame
     df = pd.DataFrame(placeholders_data, columns=[
         'Layout Index', 'Placeholder Index', 'Shape ID', 'Name', 'Type', 'Width', 'Height', 'Left', 'Top'
     ])
@@ -37,7 +41,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     return df
 
 
-def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
+def color_rows_by_layout(df: pd.DataFrame) -> pd.core.frame.Style:
     """
     Applies color to rows of DataFrame based on the layout index.
 
@@ -45,22 +49,20 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     df (pd.DataFrame): DataFrame containing placeholder details.
 
     Returns:
-    pd.io.formats.style.Styler: Styler object with applied row colors.
+    pd.core.frame.Style: Styler object with applied row colors.
     """
-    def apply_colors(row):
-        colors = [
-            'background-color: #ffcccc',
-            'background-color: #ccffcc',
-            'background-color: #ccccff',
-            'background-color: #ffffcc',
-            'background-color: #ffccff',
-            'background-color: #ccffff',
-            'background-color: #ffd700',
-            'background-color: #e6e6fa'
-        ]
-        return [colors[row['Layout Index'] % len(colors)]] * len(row)
+    colors = [
+        'background-color: #ffcccc',  # Light red
+        'background-color: #ccffcc',  # Light green
+        'background-color: #ccccff',  # Light blue
+        'background-color: #ffffcc',  # Light yellow
+        'background-color: #ffccff',  # Light pink
+        'background-color: #ccffff',  # Light cyan
+        'background-color: #ffd700',  # Gold
+        'background-color: #e6e6fa'   # Lavender
+    ]
 
-    return df.style.apply(apply_colors, axis=1)
+    return df.style.apply(lambda row: [colors[row['Layout Index'] % len(colors)]] * len(row), axis=1)
 
 
 def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
@@ -78,6 +80,7 @@ def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
     """
     placeholder_indices_by_layout = df.groupby('Layout Index')['Placeholder Index'].apply(list).tolist()
     layout_indices = df['Layout Index'].unique().tolist()
+
     filtered_df = df[df['Name'].str.startswith('Content Placeholder')]
     grouped = filtered_df.groupby('Layout Index')['Placeholder Index'].apply(list)
     index_containing_placeholders = grouped.tolist()
@@ -99,5 +102,8 @@ def supporting_parameters(design_number: int) -> tuple:
         - List of lists of content placeholder indices by layout.
     """
     placeholders_df = list_placeholders(design_number)
-    styled_df = color_rows_by_layout(placeholders_df)  # Optional for checking design details
-    return get_placeholder_indices_by_layout(placeholders_df)
+    styled_df = color_rows_by_layout(placeholders_df)
+    placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders = get_placeholder_indices_by_layout(
+        placeholders_df)
+
+    return placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders

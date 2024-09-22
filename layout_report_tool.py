@@ -12,9 +12,13 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     pd.DataFrame: DataFrame containing placeholder details.
     """
     placeholders_data = []
-
-    # Load the presentation
-    prs = Presentation(f"Powerpointer-main/Designs/Design-{design_number}.pptx")
+    file_path = f"Powerpointer-main/Designs/Design-{design_number}.pptx"
+    
+    try:
+        prs = Presentation(file_path)
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return pd.DataFrame()  # Return an empty DataFrame if the file is not found
 
     # Iterate over slide layouts and placeholders
     for i, layout in enumerate(prs.slide_layouts):
@@ -38,7 +42,6 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     ])
 
     return df
-
 
 def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame.style:
     """
@@ -65,7 +68,6 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame.style:
 
     return df.style.apply(apply_colors, axis=1)
 
-
 def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
     """
     Retrieves placeholder indices grouped by layout index and indices containing content placeholders.
@@ -90,7 +92,6 @@ def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
 
     return placeholder_indices_by_layout, layout_indices, index_containing_placeholders
 
-
 def supporting_parameters(design_number: int) -> tuple:
     """
     Generates supporting parameters for the given design number.
@@ -105,9 +106,6 @@ def supporting_parameters(design_number: int) -> tuple:
         - List of lists of content placeholder indices by layout.
     """
     placeholders_df = list_placeholders(design_number)
-
-    # Display the styled DataFrame (optional but useful if you want to check custom design details)
-    styled_df = color_rows_by_layout(placeholders_df)
 
     # Get placeholder indices by layout
     placeholder_indices_by_layout_, layout_indices_, index_containing_placeholders = get_placeholder_indices_by_layout(

@@ -41,7 +41,7 @@ def list_placeholders(design_number: int) -> pd.DataFrame:
     return df
 
 
-def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
+def color_rows_by_layout(df: pd.DataFrame) -> pd.DataFrame:
     """
     Applies color to rows of DataFrame based on the layout index.
 
@@ -49,7 +49,7 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     df (pd.DataFrame): DataFrame containing placeholder details.
 
     Returns:
-    pd.io.formats.style.Styler: Styler object with applied row colors.
+    pd.DataFrame: DataFrame with applied row colors.
     """
 
     def apply_colors(row):
@@ -65,7 +65,11 @@ def color_rows_by_layout(df: pd.DataFrame) -> pd.io.formats.style.Styler:
         ]
         return [colors[row['Layout Index'] % len(colors)]] * len(row)
 
-    return df.style.apply(apply_colors, axis=1)
+    # Create a new DataFrame for styling
+    styled_df = df.copy()
+    styled_df['Color'] = [apply_colors(row) for _, row in styled_df.iterrows()]
+
+    return styled_df
 
 
 def get_placeholder_indices_by_layout(df: pd.DataFrame) -> tuple:
@@ -108,7 +112,7 @@ def supporting_parameters(design_number: int) -> tuple:
     """
     placeholders_df = list_placeholders(design_number)
 
-    # Display the styled DataFrame (optional but very usefull if you want to check yur custom design details)
+    # Display the styled DataFrame (optional but very useful if you want to check your custom design details)
     styled_df = color_rows_by_layout(placeholders_df)
 
     # Get placeholder indices by layout

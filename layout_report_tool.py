@@ -103,4 +103,9 @@ def supporting_parameters(design_number: int) -> tuple:
         - List of unique layout indices.
         - List of lists of content placeholder indices by layout.
     """
-    placeholders_df = list_placeholders(des
+    placeholders_df = list_placeholders(design_number)
+
+    # Get placeholder indices by layout
+    placeholder_indices_by_layout, layout_indices, index_containing_placeholders = get_placeholder_indices_by_layout(placeholders_df)
+
+    return placeholder_indices_by_layout, layout_indices, index_containing_placeholders
